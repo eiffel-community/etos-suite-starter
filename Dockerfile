@@ -1,19 +1,23 @@
-FROM python:3.8.3
+FROM python:3.8.3-buster AS build
+
+COPY . /src
+WORKDIR /src
+RUN python3 setup.py bdist_wheel
+
+FROM python:3.8.3-slim-buster
+
+COPY --from=build /src/dist/*.whl /tmp
+# hadolint ignore=DL3013
+RUN pip install --no-cache-dir /tmp/*.whl
+
+RUN groupadd -r etos && useradd -r -s /bin/false -g etos etos
+USER etos
 
 # DOCKER_CONTEXT is used by ETOS Library to determine whether or not the tool is running in Kubernetes
 ENV DOCKER_CONTEXT="ETOS Suite Starter"
-ARG PIP_ARGS
 
-RUN useradd -ms /bin/bash etos
-USER etos
+LABEL org.opencontainers.image.source=https://github.com/eiffel-community/etos-suite-starter
+LABEL org.opencontainers.image.authors=etos-maintainers@googlegroups.com
+LABEL org.opencontainers.image.licenses=Apache-2.0
 
-ENV PATH="/home/etos/.local/bin:${PATH}"
-
-RUN pip install $PIP_ARGS --upgrade pip
-WORKDIR /usr/src/app/src
 CMD ["python", "-u", "-m", "suite_starter.suite_starter"]
-
-COPY requirements.txt /requirements.txt
-RUN pip install $PIP_ARGS -r /requirements.txt
-
-COPY . /usr/src/app
