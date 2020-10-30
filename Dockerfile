@@ -1,10 +1,10 @@
-FROM python:3.8.3-buster AS build
+FROM python:3.9.0-buster AS build
 
 COPY . /src
 WORKDIR /src
 RUN python3 setup.py bdist_wheel
 
-FROM python:3.8.3-slim-buster
+FROM python:3.9.0-slim-buster
 
 COPY --from=build /src/dist/*.whl /tmp
 # hadolint ignore=DL3013
