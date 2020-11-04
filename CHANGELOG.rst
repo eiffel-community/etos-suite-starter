@@ -2,6 +2,12 @@
 Changelog
 =========
 
+Version 1.3.0
+-------------
+
+- 23d68b4 Update etos library to version 1.3.0
+- 13c16d1 Upgrade suite starter to python 3.9.0 (#9)
+
 Version 1.2.0
 -------------
 
