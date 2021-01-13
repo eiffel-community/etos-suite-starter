@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 1.8.0
+-------------
+
+- 72ebb73 Update etos library to version 1.8.0
+
 Version 1.7.0
 -------------
 
