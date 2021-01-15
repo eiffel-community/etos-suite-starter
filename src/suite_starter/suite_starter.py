@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright 2020 Axis Communications AB.
+# Copyright 2020-2021 Axis Communications AB.
 #
 # For a full list of individual contributors, please see the commit history.
 #
@@ -17,19 +17,16 @@
 # -*- coding: utf-8 -*-
 """ETOS suite starter module."""
 import os
-import argparse
-import sys
 import logging
 import json
 
 from etos_lib import ETOS
 from etos_lib.kubernetes.jobs import Job
+from etos_lib.logging.logger import FORMAT_CONFIG
 
-from suite_starter import __version__
-from suite_starter.esr_yaml import ESR_YAML
+from suite_starter.esr_yaml import ESR_YAML, ESR_YAML_WITH_SIDECAR
 
-
-_logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 # Remove spam from pika.
 logging.getLogger("pika").setLevel(logging.WARNING)
 
@@ -70,24 +67,38 @@ class SuiteStarter:  # pylint:disable=too-many-instance-attributes
         :rtype: bool
         """
         suite_id = event.meta.event_id
+        FORMAT_CONFIG.identifier = suite_id
+        LOGGER.info("Received a TERCC event. Build data for ESR.")
         data = {
             "EiffelTestExecutionRecipeCollectionCreatedEvent": json.dumps(event.json)
         }
         data["etos_configmap"] = os.getenv("ETOS_CONFIGMAP")
         data["docker_image"] = self.etos.config.get("suite_runner")
         data["suite_id"] = suite_id
+        with_sidecar = os.getenv("ETOS_SIDECAR_ENABLED", "false").lower() == "true"
+        if with_sidecar:
+            data["sidecar_image"] = os.getenv("ETOS_SIDECAR_IMAGE")
 
         job = Job(in_cluster=bool(os.getenv("DOCKER_CONTEXT")))
         job_name = job.uniqueify("suite-runner-{}".format(suite_id)).lower()
         data["job_name"] = job_name
 
-        assert data["EiffelTestExecutionRecipeCollectionCreatedEvent"]
-        assert data["etos_configmap"], "Missing ETOS_CONFIGMAP in environment"
-        assert data["docker_image"], "Missing SUITE_RUNNER in environment"
+        LOGGER.info("Data: %r", data)
+        try:
+            assert data["EiffelTestExecutionRecipeCollectionCreatedEvent"]
+            assert data["etos_configmap"], "Missing ETOS_CONFIGMAP in environment"
+            assert data["docker_image"], "Missing SUITE_RUNNER in environment"
+        except AssertionError as exception:
+            LOGGER.critical("Incomplete data for ESR. %r", exception)
+            raise
 
-        body = job.load_yaml(ESR_YAML.format(**data))
-        _logger.info("Starting new executor: %s", job_name)
+        if with_sidecar:
+            body = job.load_yaml(ESR_YAML_WITH_SIDECAR.format(**data))
+        else:
+            body = job.load_yaml(ESR_YAML.format(**data))
+        LOGGER.info("Starting new executor: %r", job_name)
         job.create_job(body)
+        LOGGER.info("ESR successfully launched.")
         return True
 
     def run(self):
@@ -107,67 +118,15 @@ class SuiteStarter:  # pylint:disable=too-many-instance-attributes
         self.etos.monitor.keep_alive(body)  # Blocking.
 
 
-def parse_args(args):
-    """Parse command line parameters.
-
-    Args:
-      args ([str]): command line parameters as list of strings
-
-    Returns:
-      :obj:`argparse.Namespace`: command line parameters namespace
-    """
-    parser = argparse.ArgumentParser(description="ETOS Suite Starter")
-    parser.add_argument(
-        "--version",
-        action="version",
-        version="suite_starter {ver}".format(ver=__version__),
-    )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        dest="loglevel",
-        help="set loglevel to INFO",
-        action="store_const",
-        const=logging.INFO,
-    )
-    parser.add_argument(
-        "-vv",
-        "--very-verbose",
-        dest="loglevel",
-        help="set loglevel to DEBUG",
-        action="store_const",
-        const=logging.DEBUG,
-    )
-    return parser.parse_args(args)
-
-
-def setup_logging(loglevel):
-    """Set up basic logging.
-
-    Args:
-      loglevel (int): minimum loglevel for emitting messages
-    """
-    logformat = "[%(asctime)s] %(levelname)s:%(name)s:%(message)s"
-    logging.basicConfig(
-        level=loglevel, stream=sys.stdout, format=logformat, datefmt="%Y-%m-%d %H:%M:%S"
-    )
-
-
-def main(args):
-    """Entry point allowing external calls.
-
-    Args:
-      args ([str]): command line parameter list
-    """
-    args = parse_args(args)
-    setup_logging(args.loglevel)
+def main():
+    """Entry point allowing external calls."""
     suite_starter = SuiteStarter()
     suite_starter.run()
 
 
 def run():
     """Entry point for console_scripts."""
-    main(sys.argv[1:])
+    main()
 
 
 if __name__ == "__main__":
