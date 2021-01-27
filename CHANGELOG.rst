@@ -2,6 +2,13 @@
 Changelog
 =========
 
+Version 1.9.0
+-------------
+
+- 8b8cba5 Update etos library to version 1.9.0
+- be41d0c Remove eiffellib requirement. (#11)
+- 8f19f67 Add logging support to suite starter (#10)
+
 Version 1.8.0
 -------------
 
