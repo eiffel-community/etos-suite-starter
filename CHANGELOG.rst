@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 1.18.0
+--------------
+
+- ad515dd Update etos library to version 1.18.0
+
 Version 1.17.0
 --------------
 
