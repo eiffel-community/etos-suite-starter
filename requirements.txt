@@ -18,4 +18,4 @@
 requests==2.24.0
 kubernetes==7.0.1
 pyscaffold==3.2.3
-etos_lib==1.21.0
+etos_lib==1.22.0
