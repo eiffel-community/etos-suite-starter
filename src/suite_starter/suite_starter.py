@@ -80,7 +80,7 @@ class SuiteStarter:  # pylint:disable=too-many-instance-attributes
             data["sidecar_image"] = os.getenv("ETOS_SIDECAR_IMAGE")
 
         job = Job(in_cluster=bool(os.getenv("DOCKER_CONTEXT")))
-        job_name = job.uniqueify("suite-runner-{}".format(suite_id)).lower()
+        job_name = job.uniqueify(f"suite-runner-{suite_id}").lower()
         data["job_name"] = job_name
 
         LOGGER.info("Data: %r", data)
@@ -113,7 +113,7 @@ class SuiteStarter:  # pylint:disable=too-many-instance-attributes
             "Suite starter is running and listening to "
             "events in the Eiffel context.\n"
             "Configmap:\n"
-            "ETOS Suite Runner: {}\n".format(os.getenv("SUITE_RUNNER"))
+            f"ETOS Suite Runner: {os.getenv('SUITE_RUNNER')}\n"
         )
         self.etos.monitor.keep_alive(body)  # Blocking.
 

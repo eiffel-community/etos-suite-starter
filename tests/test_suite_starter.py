@@ -1,4 +1,4 @@
-# Copyright 2020 Axis Communications AB.
+# Copyright 2020-2021 Axis Communications AB.
 #
 # For a full list of individual contributors, please see the commit history.
 #
@@ -196,14 +196,13 @@ class TestSuiteStarter(TestCase):
         self.assertEqual(
             len(image),
             1,
-            "There is not exactly 1 docker image in kubernetes yaml. There was: %d"
-            % len(image),
+            f"There is not exactly 1 docker image in kubernetes yaml. There was: {len(image)}",
         )
         self.assertEqual(
             image[0],
             self.suite_runner,
-            "Docker image sent to ESR is not correct. Expected '%s', Was '%s'"
-            % (self.suite_runner, image[0]),
+            "Docker image sent to ESR is not correct. "
+            f"Expected {self.suite_runner!r}, Was {image[0]!r}",
         )
 
     @patch("suite_starter.suite_starter.Job")
@@ -230,7 +229,7 @@ class TestSuiteStarter(TestCase):
             str(context.exception),
             expected_message,
             "SuiteStarter did not fail with AssertionError on the correct parameter. "
-            "Expected: '%s'. Was: '%s'" % (expected_message, str(context.exception)),
+            f"Expected: {expected_message!r}. Was: {context.exception!r}",
         )
 
     @patch("suite_starter.suite_starter.Job")
@@ -258,5 +257,5 @@ class TestSuiteStarter(TestCase):
             str(context.exception),
             expected_message,
             "SuiteStarter did not fail with AssertionError on the correct parameter. "
-            "Expected: '%s'. Was: '%s'" % (expected_message, str(context.exception)),
+            f"Expected: {expected_message!r}. Was: {context.exception!r}",
         )
