@@ -8,7 +8,7 @@ FROM python:3.9.0-slim-buster
 
 COPY --from=build /src/dist/*.whl /tmp
 # hadolint ignore=DL3013
-RUN pip install --no-cache-dir /tmp/*.whl && groupadd -r etos && useradd -r -s /bin/false -g etos etos
+RUN pip install --no-cache-dir /tmp/*.whl && groupadd -r etos && useradd -r -m -s /bin/false -g etos etos
 USER etos
 
 # DOCKER_CONTEXT is used by ETOS Library to determine whether or not the tool is running in Kubernetes
