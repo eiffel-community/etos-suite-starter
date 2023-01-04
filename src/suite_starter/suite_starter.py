@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright 2020-2021 Axis Communications AB.
+# Copyright 2020-2023 Axis Communications AB.
 #
 # For a full list of individual contributors, please see the commit history.
 #
@@ -73,6 +73,7 @@ class SuiteStarter:  # pylint:disable=too-many-instance-attributes
             "EiffelTestExecutionRecipeCollectionCreatedEvent": json.dumps(event.json)
         }
         data["etos_configmap"] = os.getenv("ETOS_CONFIGMAP")
+        data["etos_rabbitmq_secret"] = os.getenv("ETOS_RABBITMQ_SECRET")
         data["docker_image"] = self.etos.config.get("suite_runner")
         data["suite_id"] = suite_id
         with_sidecar = os.getenv("ETOS_SIDECAR_ENABLED", "false").lower() == "true"
