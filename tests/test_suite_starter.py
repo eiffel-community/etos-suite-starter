@@ -26,6 +26,7 @@ from etos_lib.lib.config import Config
 
 from suite_starter.suite_starter import SuiteStarter
 
+# It's okay since it's tests. pylint:disable=broad-exception-raised
 LOGGER = logging.getLogger("TESTS")
 
 os.environ["ETOS_DISABLE_SENDING_EVENTS"] = "1"  # True

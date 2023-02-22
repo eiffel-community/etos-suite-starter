@@ -92,8 +92,8 @@ source_suffix = ".rst"
 master_doc = "index"
 
 # General information about the project.
-project = u"suite_starter"
-copyright = u"2020, Axis Communications AB"
+project = "suite_starter"
+copyright = "2020, Axis Communications AB"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -241,7 +241,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-    ("index", "user_guide.tex", u"suite_starter Documentation", u"", "manual"),
+    ("index", "user_guide.tex", "suite_starter Documentation", "", "manual"),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
