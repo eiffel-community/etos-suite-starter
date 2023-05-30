@@ -15,6 +15,5 @@
 # numpy==1.13.3
 # scipy==1.0
 #
-kubernetes==7.0.1
 pyscaffold==3.2.3
-etos_lib==2.2.0
+etos_lib==3.1.0
