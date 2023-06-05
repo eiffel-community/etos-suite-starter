@@ -166,7 +166,7 @@ class TestSuiteStarter(TestCase):
             "ETOS Configmap is not available in kubernetes yaml.",
         )
         self.assertEqual(
-            len(configmaps), 2, "There are too many configmaps in kubernetes yaml."
+            len(configmaps), 3, "There are too many configmaps in kubernetes yaml."
         )
 
     @patch("suite_starter.suite_starter.Job._load_config")
@@ -196,11 +196,11 @@ class TestSuiteStarter(TestCase):
         image = [value for _, value in self.search(yaml, "image")]
         self.assertEqual(
             len(image),
-            3,
-            f"There is not exactly 3 docker image in kubernetes yaml. There was: {len(image)}",
+            4,
+            f"There is not exactly 4 docker image in kubernetes yaml. There was: {len(image)}",
         )
         self.assertEqual(
-            image[1],
+            image[2],
             self.suite_runner,
             "Docker image sent to ESR is not correct. "
             f"Expected {self.suite_runner!r}, Was {image[1]!r}",
