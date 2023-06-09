@@ -16,4 +16,4 @@
 # scipy==1.0
 #
 pyscaffold==3.2.3
-etos_lib==3.1.0
+etos_lib==3.2.1

@@ -18,6 +18,10 @@ import os
 from importlib.metadata import version, PackageNotFoundError
 from etos_lib.logging.logger import setup_logging
 
+# The suite starter shall not send logs to RabbitMQ as it
+# is too early in the ETOS test run.
+os.environ["ETOS_ENABLE_SENDING_LOGS"] = "false"
+
 try:
     VERSION = version("suite_starter")
 except PackageNotFoundError:
