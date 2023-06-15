@@ -203,7 +203,7 @@ class TestSuiteStarter(TestCase):
             image[2],
             self.suite_runner,
             "Docker image sent to ESR is not correct. "
-            f"Expected {self.suite_runner!r}, Was {image[1]!r}",
+            f"Expected {self.suite_runner!r}, Was {image[2]!r}",
         )
 
     @patch("suite_starter.suite_starter.Job")
