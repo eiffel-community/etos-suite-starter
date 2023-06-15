@@ -57,6 +57,7 @@ class SuiteStarter:  # pylint:disable=too-many-instance-attributes
     def _configure(self):
         """Configure ETOS library."""
         self.etos.config.set("suite_runner", os.getenv("SUITE_RUNNER"))
+        self.etos.config.set("log_listener", os.getenv("LOG_LISTENER"))
 
     def suite_runner_callback(self, event, _):
         """Start a suite runner on a TERCC event.
@@ -75,6 +76,7 @@ class SuiteStarter:  # pylint:disable=too-many-instance-attributes
         data["etos_configmap"] = os.getenv("ETOS_CONFIGMAP")
         data["etos_rabbitmq_secret"] = os.getenv("ETOS_RABBITMQ_SECRET")
         data["docker_image"] = self.etos.config.get("suite_runner")
+        data["log_listener"] = self.etos.config.get("log_listener")
         data["suite_id"] = suite_id
         with_sidecar = os.getenv("ETOS_SIDECAR_ENABLED", "false").lower() == "true"
         if with_sidecar:
