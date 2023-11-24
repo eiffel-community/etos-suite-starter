@@ -41,5 +41,6 @@ jobs:
         valueFile: 'manifests/base/deployment.yaml'
         propertyPath: 'spec.template.spec.containers[0].image'
         value: registry.nordix.org/eiffel/etos-suite-starter:${{ steps.image.outputs.version }}
+        branch: main
         commitChange: true
         message: Updating manifest image to version ${{ steps.image.outputs.version }}
