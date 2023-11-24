@@ -1,0 +1,45 @@
+name: Build and push
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    types:
+      - closed
+  workflow_dispatch:
+
+jobs:
+  build:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build app image
+      run: docker build . --tag image
+
+    - name: Log into registry
+      run: echo "${{ secrets.REGISTRYPASSWORD }}" | docker login registry.nordix.org -u ${{ secrets.REGISTRYUSERNAME }} --password-stdin
+
+    - name: Push app image
+      id: image
+      run: |
+        IMAGE_ID=registry.nordix.org/eiffel/${{ github.repository }}
+        # Strip git ref prefix from version
+        VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+        # Strip "v" prefix from tag name
+        [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
+        # Use Docker `latest` tag convention
+        [ "$VERSION" == "main" ] && VERSION=$(echo ${{ github.sha }} | cut -c1-8)
+        echo IMAGE_ID=$IMAGE_ID
+        echo VERSION=$VERSION
+        docker tag image $IMAGE_ID:$VERSION
+        docker push $IMAGE_ID:$VERSION
+        echo $IMAGE_ID:$VERSION
+        echo "::set-output name=version::$VERSION"
+    - name: Update manifests
+      uses: fjogeleit/yaml-update-action@main
+      with:
+        valueFile: 'manifests/base/deployment.yaml'
+        propertyPath: 'spec.template.spec.containers[0].image'
+        value: registry.nordix.org/eiffel/etos-suite-starter:${{ steps.image.outputs.version }}
+        commitChange: true
+        message: Updating manifest image to version ${{ steps.image.outputs.version }}
