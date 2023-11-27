@@ -22,7 +22,7 @@ jobs:
     - name: Push app image
       id: image
       run: |
-        IMAGE_ID=registry.nordix.org/eiffel/${{ github.repository }}
+        IMAGE_ID=registry.nordix.org/eiffel/etos-suite-starter
         # Strip git ref prefix from version
         VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
         # Strip "v" prefix from tag name
