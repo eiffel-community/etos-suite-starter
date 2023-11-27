@@ -18,7 +18,7 @@ spec:
       serviceAccountName: etos-suite-starter
       containers:
         - name: etos-suite-starter
-          image: registry.nordix.org/eiffel/etos-suite-starter:e3cd2e98
+          image: registry.nordix.org/eiffel/etos-suite-starter:85aefbec
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
