@@ -127,13 +127,9 @@ class TestSuiteStarter(TestCase):
 
         yaml = mock_job.call_args[0][0]
 
-        step(
-            "Verify that TERCC sent from SuiteStarter matches the one supplied when executing."
-        )
+        step("Verify that TERCC sent from SuiteStarter matches the one supplied when executing.")
         environment_dict = self._kubernetes_env_to_dict(yaml)
-        self.assertEqual(
-            json.loads(environment_dict["TERCC"])["meta"]["id"], tercc.meta.event_id
-        )
+        self.assertEqual(json.loads(environment_dict["TERCC"])["meta"]["id"], tercc.meta.event_id)
 
     @patch("suite_starter.suite_starter.Job._load_config")
     @patch("suite_starter.suite_starter.Job.create_job")
@@ -165,9 +161,7 @@ class TestSuiteStarter(TestCase):
             configmaps,
             "ETOS Configmap is not available in kubernetes yaml.",
         )
-        self.assertEqual(
-            len(configmaps), 3, "There are too many configmaps in kubernetes yaml."
-        )
+        self.assertEqual(len(configmaps), 3, "There are too many configmaps in kubernetes yaml.")
 
     @patch("suite_starter.suite_starter.Job._load_config")
     @patch("suite_starter.suite_starter.Job.create_job")

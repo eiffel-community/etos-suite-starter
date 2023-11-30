@@ -16,14 +16,13 @@
 # limitations under the License.
 # -*- coding: utf-8 -*-
 """ETOS suite starter module."""
-import os
-import logging
 import json
+import logging
+import os
 
 from etos_lib import ETOS
 from etos_lib.kubernetes.jobs import Job
 from etos_lib.logging.logger import FORMAT_CONFIG
-
 from suite_starter.esr_yaml import ESR_YAML, ESR_YAML_WITH_SIDECAR
 
 LOGGER = logging.getLogger(__name__)
@@ -38,9 +37,7 @@ class SuiteStarter:  # pylint:disable=too-many-instance-attributes
 
     def __init__(self):
         """Initialize SuiteStarter by creating a rabbitmq publisher and subscriber."""
-        self.etos = ETOS(
-            "ETOS Suite Starter", os.getenv("HOSTNAME"), "ETOS Suite Starter"
-        )
+        self.etos = ETOS("ETOS Suite Starter", os.getenv("HOSTNAME"), "ETOS Suite Starter")
         self._configure()
 
         self.etos.config.rabbitmq_subscriber_from_environment()
@@ -70,11 +67,10 @@ class SuiteStarter:  # pylint:disable=too-many-instance-attributes
         suite_id = event.meta.event_id
         FORMAT_CONFIG.identifier = suite_id
         LOGGER.info("Received a TERCC event. Build data for ESR.")
-        data = {
-            "EiffelTestExecutionRecipeCollectionCreatedEvent": json.dumps(event.json)
-        }
+        data = {"EiffelTestExecutionRecipeCollectionCreatedEvent": json.dumps(event.json)}
         data["etos_configmap"] = os.getenv("ETOS_CONFIGMAP")
         data["etos_rabbitmq_secret"] = os.getenv("ETOS_RABBITMQ_SECRET")
+        data["ttl"] = os.getenv("ETOS_ESR_TTL", "3600")
         data["docker_image"] = self.etos.config.get("suite_runner")
         data["log_listener"] = self.etos.config.get("log_listener")
         data["suite_id"] = suite_id
