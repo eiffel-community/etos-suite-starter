@@ -71,6 +71,7 @@ class SuiteStarter:  # pylint:disable=too-many-instance-attributes
         data["etos_configmap"] = os.getenv("ETOS_CONFIGMAP")
         data["etos_rabbitmq_secret"] = os.getenv("ETOS_RABBITMQ_SECRET")
         data["ttl"] = os.getenv("ETOS_ESR_TTL", "3600")
+        data["termination_grace_period"] = os.getenv("ETOS_TERMINATION_GRACE_PERIOD", "300")
         data["docker_image"] = self.etos.config.get("suite_runner")
         data["log_listener"] = self.etos.config.get("log_listener")
         data["suite_id"] = suite_id
