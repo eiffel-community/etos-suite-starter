@@ -22,9 +22,7 @@ import os
 from pathlib import Path
 
 from opentelemetry import trace, context
-from opentelemetry.propagate import inject, extract
-#from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
-#from opentelemetry.context import Context
+from opentelemetry.propagate import inject
 
 from etos_lib import ETOS
 from etos_lib.kubernetes.jobs import Job
@@ -99,7 +97,9 @@ class SuiteStarter:  # pylint:disable=too-many-instance-attributes
         ctx = context.get_current()
         LOGGER.info("Current OpenTelemetry context: %s", ctx)
         carrier = {}
-        inject(carrier)  # creates a dict with context reference, e. g. {'traceparent': '00-0be6c260d9cbe9772298eaf19cb90a5b-371353ee8fbd3ced-01'}
+        # inject() creates a dict with context reference,
+        # e. g. {'traceparent': '00-0be6c260d9cbe9772298eaf19cb90a5b-371353ee8fbd3ced-01'}
+        inject(carrier)
         env = ",".join(f"{k}={v}" for k, v in carrier.items())
         LOGGER.info("Current OpenTelemetry context env: %s", env)
         return env

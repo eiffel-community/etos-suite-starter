@@ -8,8 +8,8 @@ FROM python:3.9-slim-buster
 
 COPY --from=build /src/dist/*.whl /tmp
 # hadolint ignore=DL3013
-RUN apt-get update && \
-    apt-get install -y gcc libc-dev tzdata --no-install-recommends && \
+RUN apt update && \
+    apt install -y gcc libc-dev tzdata --no-install-recommends && \
     pip install --no-cache-dir /tmp/*.whl && \
     apt-get purge -y --auto-remove gcc libc-dev && \
     rm -rf /var/lib/apt/lists/* && \
