@@ -45,7 +45,7 @@ if os.getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"):
             {
                 SERVICE_NAME: "etos-suite-starter",
                 SERVICE_VERSION: VERSION,
-                SERVICE_NAMESPACE: ENVIRONMENT
+                SERVICE_NAMESPACE: ENVIRONMENT,
             }
         )
     )
