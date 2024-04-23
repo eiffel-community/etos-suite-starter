@@ -19,6 +19,7 @@ import uuid
 import json
 import logging
 from unittest import TestCase
+from pathlib import Path
 from mock import patch
 
 from eiffellib.events import EiffelTestExecutionRecipeCollectionCreatedEvent
@@ -28,6 +29,7 @@ from suite_starter.suite_starter import SuiteStarter
 
 # It's okay since it's tests. pylint:disable=broad-exception-raised
 LOGGER = logging.getLogger("TESTS")
+BASE_PATH = Path(__file__).parent
 
 os.environ["ETOS_DISABLE_SENDING_EVENTS"] = "1"  # True
 os.environ["ETOS_DISABLE_RECEIVING_EVENTS"] = "1"  # True
@@ -118,7 +120,8 @@ class TestSuiteStarter(TestCase):
             3. Verify that TERCC sent from SuiteStarter matches the one supplied when executing.
         """
         step("Execute SuiteStarter with TERCC as input.")
-        suite_starter = SuiteStarter()
+        template = BASE_PATH.joinpath("esr_template.yaml")
+        suite_starter = SuiteStarter(str(template))
         tercc = self._generate_tercc()
         return_value = suite_starter.suite_runner_callback(tercc, tercc.meta.event_id)
         step("Check that SuiteStarter executed correctly.")
@@ -145,7 +148,8 @@ class TestSuiteStarter(TestCase):
             3. Verify that configmaps are sent to ESR.
         """
         step("Execute SuiteStarter with TERCC as input.")
-        suite_starter = SuiteStarter()
+        template = BASE_PATH.joinpath("esr_template.yaml")
+        suite_starter = SuiteStarter(str(template))
         tercc = self._generate_tercc()
         return_value = suite_starter.suite_runner_callback(tercc, tercc.meta.event_id)
         step("Check that SuiteStarter executed correctly.")
@@ -177,7 +181,8 @@ class TestSuiteStarter(TestCase):
             3. Verify that the correct docker image is sent to ESR.
         """
         step("Execute SuiteStarter with TERCC as input.")
-        suite_starter = SuiteStarter()
+        template = BASE_PATH.joinpath("esr_template.yaml")
+        suite_starter = SuiteStarter(str(template))
         tercc = self._generate_tercc()
         return_value = suite_starter.suite_runner_callback(tercc, tercc.meta.event_id)
         step("Check that SuiteStarter executed correctly.")
@@ -198,59 +203,4 @@ class TestSuiteStarter(TestCase):
             self.suite_runner,
             "Docker image sent to ESR is not correct. "
             f"Expected {self.suite_runner!r}, Was {image[2]!r}",
-        )
-
-    @patch("suite_starter.suite_starter.Job")
-    def test_suite_starter_missing_etos_configmap(self, _):
-        """Test that suite starter aborts if 'ETOS_CONFIGMAP' is missing from environment.
-
-        Approval criteria:
-            - SuiteStarter shall abort execution if ETOS_CONFIGMAP is missing.
-
-        Test steps:
-            1. Execute SuiteStarter without ETOS_CONFIGMAP.
-            2. Verify that SuiteStarter did not execute correctly.
-        """
-        del os.environ["ETOS_CONFIGMAP"]
-        step("Execute SuiteStarter without ETOS_CONFIGMAP")
-        suite_starter = SuiteStarter()
-        tercc = self._generate_tercc()
-
-        step("Verify that SuiteStarter did not execute correctly.")
-        expected_message = "Missing ETOS_CONFIGMAP in environment"
-        with self.assertRaises(AssertionError) as context:
-            suite_starter.suite_runner_callback(tercc, tercc.meta.event_id)
-        self.assertEqual(
-            str(context.exception),
-            expected_message,
-            "SuiteStarter did not fail with AssertionError on the correct parameter. "
-            f"Expected: {expected_message!r}. Was: {context.exception!r}",
-        )
-
-    @patch("suite_starter.suite_starter.Job")
-    def test_suite_starter_missing_suite_starter_suite_runner(self, _):
-        """Test that suite starter aborts if 'SUITE_RUNNER' is missing from environment.
-
-        Approval criteria:
-            - SuiteStarter shall abort execution if SUITE_RUNNER is missing.
-
-        Test steps:
-            1. Execute SuiteStarter without SUITE_RUNNER.
-            2. Verify that SuiteStarter did not execute correctly.
-        """
-        del os.environ["SUITE_RUNNER"]
-
-        step("Execute SuiteStarter without SUITE_RUNNER")
-        suite_starter = SuiteStarter()
-        tercc = self._generate_tercc()
-
-        step("Verify that SuiteStarter did not execute correctly.")
-        with self.assertRaises(AssertionError) as context:
-            suite_starter.suite_runner_callback(tercc, tercc.meta.event_id)
-        expected_message = "Missing SUITE_RUNNER in environment"
-        self.assertEqual(
-            str(context.exception),
-            expected_message,
-            "SuiteStarter did not fail with AssertionError on the correct parameter. "
-            f"Expected: {expected_message!r}. Was: {context.exception!r}",
         )

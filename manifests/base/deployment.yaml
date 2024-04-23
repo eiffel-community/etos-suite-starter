@@ -20,6 +20,15 @@ spec:
         - name: etos-suite-starter
           image: registry.nordix.org/eiffel/etos-suite-starter:33fab087
           imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: suite-runner-template
+              readOnly: true
+              mountPath: "/app/suite_runner_template.yaml"
+              subPath: suite_runner_template.yaml
           envFrom:
             - configMapRef:
                 name: etos-suite-starter
+      volumes:
+        - name: suite-runner-template
+          configMap:
+            name: etos-suite-runner-template

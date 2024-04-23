@@ -19,11 +19,11 @@
 import json
 import logging
 import os
+from pathlib import Path
 
 from etos_lib import ETOS
 from etos_lib.kubernetes.jobs import Job
 from etos_lib.logging.logger import FORMAT_CONFIG
-from suite_starter.esr_yaml import ESR_YAML, ESR_YAML_WITH_SIDECAR
 
 LOGGER = logging.getLogger(__name__)
 # Remove spam from pika.
@@ -35,10 +35,13 @@ class SuiteStarter:  # pylint:disable=too-many-instance-attributes
 
     announcement = None
 
-    def __init__(self):
+    def __init__(self, suite_runner_template_path: str = "/app/suite_runner_template.yaml"):
         """Initialize SuiteStarter by creating a rabbitmq publisher and subscriber."""
         self.etos = ETOS("ETOS Suite Starter", os.getenv("HOSTNAME"), "ETOS Suite Starter")
+
+        self.suite_runner_template = self._load_template(suite_runner_template_path)
         self._configure()
+        self._validate_template(self.suite_runner_template)
 
         self.etos.config.rabbitmq_subscriber_from_environment()
         self.etos.config.rabbitmq_publisher_from_environment()
@@ -51,10 +54,36 @@ class SuiteStarter:  # pylint:disable=too-many-instance-attributes
             can_nack=True,
         )
 
+    def _load_template(self, suite_runner_template_path: str) -> str:
+        """Load the suite runner template file."""
+        suite_runner_template = Path(suite_runner_template_path)
+        assert suite_runner_template.is_file(), "Suite runner template is not a file"
+        assert suite_runner_template.exists(), "Suite runner template does not exist"
+        return suite_runner_template.read_text(encoding="utf-8")
+
+    def _validate_template(self, suite_runner_template: str):
+        """Validate that the suite runner template can be deployed."""
+        data = {
+            "EiffelTestExecutionRecipeCollectionCreatedEvent": "FakeEvent",
+            "suite_id": "FakeID",
+            "job_name": "FakeName",
+        }
+        formatted = suite_runner_template.format(**data, **self.etos.config.get("configuration"))
+        job = Job(in_cluster=bool(os.getenv("DOCKER_CONTEXT")))
+        job.load_yaml(formatted)
+
     def _configure(self):
         """Configure ETOS library."""
-        self.etos.config.set("suite_runner", os.getenv("SUITE_RUNNER"))
-        self.etos.config.set("log_listener", os.getenv("LOG_LISTENER"))
+        configuration = {
+            "docker_image": os.getenv("SUITE_RUNNER"),
+            "log_listener": os.getenv("LOG_LISTENER"),
+            "etos_configmap": os.getenv("ETOS_CONFIGMAP"),
+            "etos_rabbitmq_secret": os.getenv("ETOS_RABBITMQ_SECRET"),
+            "ttl": os.getenv("ETOS_ESR_TTL", "3600"),
+            "termination_grace_period": os.getenv("ETOS_TERMINATION_GRACE_PERIOD", "300"),
+            "sidecar_image": os.getenv("ETOS_SIDECAR_IMAGE"),
+        }
+        self.etos.config.set("configuration", configuration)
 
     def suite_runner_callback(self, event, _):
         """Start a suite runner on a TERCC event.
@@ -68,34 +97,23 @@ class SuiteStarter:  # pylint:disable=too-many-instance-attributes
         FORMAT_CONFIG.identifier = suite_id
         LOGGER.info("Received a TERCC event. Build data for ESR.")
         data = {"EiffelTestExecutionRecipeCollectionCreatedEvent": json.dumps(event.json)}
-        data["etos_configmap"] = os.getenv("ETOS_CONFIGMAP")
-        data["etos_rabbitmq_secret"] = os.getenv("ETOS_RABBITMQ_SECRET")
-        data["ttl"] = os.getenv("ETOS_ESR_TTL", "3600")
-        data["termination_grace_period"] = os.getenv("ETOS_TERMINATION_GRACE_PERIOD", "300")
-        data["docker_image"] = self.etos.config.get("suite_runner")
-        data["log_listener"] = self.etos.config.get("log_listener")
         data["suite_id"] = suite_id
-        with_sidecar = os.getenv("ETOS_SIDECAR_ENABLED", "false").lower() == "true"
-        if with_sidecar:
-            data["sidecar_image"] = os.getenv("ETOS_SIDECAR_IMAGE")
 
         job = Job(in_cluster=bool(os.getenv("DOCKER_CONTEXT")))
         job_name = job.uniqueify(f"suite-runner-{suite_id}").lower()
         data["job_name"] = job_name
 
-        LOGGER.info("Data: %r", data)
+        LOGGER.info("Dynamic data: %r", data)
+        LOGGER.info("Static data: %r", self.etos.config.get("configuration"))
         try:
             assert data["EiffelTestExecutionRecipeCollectionCreatedEvent"]
-            assert data["etos_configmap"], "Missing ETOS_CONFIGMAP in environment"
-            assert data["docker_image"], "Missing SUITE_RUNNER in environment"
         except AssertionError as exception:
             LOGGER.critical("Incomplete data for ESR. %r", exception)
             raise
 
-        if with_sidecar:
-            body = job.load_yaml(ESR_YAML_WITH_SIDECAR.format(**data))
-        else:
-            body = job.load_yaml(ESR_YAML.format(**data))
+        body = job.load_yaml(
+            self.suite_runner_template.format(**data, **self.etos.config.get("configuration"))
+        )
         LOGGER.info("Starting new executor: %r", job_name)
         job.create_job(body)
         LOGGER.info("ESR successfully launched.")
