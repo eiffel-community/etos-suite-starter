@@ -36,7 +36,11 @@ class SuiteStarter:  # pylint:disable=too-many-instance-attributes
     announcement = None
 
     def __init__(self, suite_runner_template_path: str = "/app/suite_runner_template.yaml"):
-        """Initialize SuiteStarter by creating a rabbitmq publisher and subscriber."""
+        """Initialize SuiteStarter by creating a rabbitmq publisher and subscriber.
+
+        By default the suite starter deployment will mount the suite runner template in
+        /app/suite_runner_template.yaml.
+        """
         self.etos = ETOS("ETOS Suite Starter", os.getenv("HOSTNAME"), "ETOS Suite Starter")
 
         self.suite_runner_template = self._load_template(suite_runner_template_path)
