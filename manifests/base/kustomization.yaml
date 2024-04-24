@@ -6,3 +6,4 @@ resources:
   - rolebinding.yaml
   - deployment.yaml
   - suite-runner-service-account.yaml
+  - suite-runner-template.yaml
