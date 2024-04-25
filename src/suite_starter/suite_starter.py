@@ -136,7 +136,7 @@ class SuiteStarter:  # pylint:disable=too-many-instance-attributes
             except AssertionError as exception:
                 LOGGER.critical("Incomplete data for ESR. %r", exception)
                 span.record_exception(exception)
-                span.set_status(opentelemetry.trace.Status(trace.StatusCode.ERROR))
+                span.set_status(trace.Status(trace.StatusCode.ERROR))
                 raise
 
             body = job.load_yaml(
