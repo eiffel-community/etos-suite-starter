@@ -58,6 +58,8 @@ data:
                 name: {etos_configmap}
             - secretRef:
                 name: {etos_rabbitmq_secret}
+            - configMapRef:
+                name: etos-observability
             env:
             - name: TERCC
               value: '{EiffelTestExecutionRecipeCollectionCreatedEvent}'
@@ -65,6 +67,10 @@ data:
               value: esr
             - name: KUBEXIT_GRAVEYARD
               value: /graveyard
+            - name: OTEL_CONTEXT
+              value: {otel_context}
+            - name: OTEL_COLLECTOR_HOST
+              value: {otel_collector_host}
             volumeMounts:
             - name: graveyard
               mountPath: /graveyard

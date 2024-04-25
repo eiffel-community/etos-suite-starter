@@ -75,6 +75,7 @@ class SuiteStarter:  # pylint:disable=too-many-instance-attributes
             "EiffelTestExecutionRecipeCollectionCreatedEvent": "FakeEvent",
             "suite_id": "FakeID",
             "job_name": "FakeName",
+            "otel_context": "",
         }
         formatted = suite_runner_template.format(**data, **self.etos.config.get("configuration"))
         job = Job(in_cluster=bool(os.getenv("DOCKER_CONTEXT")))
@@ -90,10 +91,12 @@ class SuiteStarter:  # pylint:disable=too-many-instance-attributes
             "ttl": os.getenv("ETOS_ESR_TTL", "3600"),
             "termination_grace_period": os.getenv("ETOS_TERMINATION_GRACE_PERIOD", "300"),
             "sidecar_image": os.getenv("ETOS_SIDECAR_IMAGE"),
+            "otel_collector_host": os.getenv("OTEL_COLLECTOR_HOST"),
         }
         self.etos.config.set("configuration", configuration)
 
     def _get_current_context(self):
+        """Get current OpenTelemetry context."""
         ctx = context.get_current()
         LOGGER.info("Current OpenTelemetry context: %s", ctx)
         carrier = {}
@@ -118,6 +121,7 @@ class SuiteStarter:  # pylint:disable=too-many-instance-attributes
             LOGGER.info("Received a TERCC event. Build data for ESR.")
             data = {"EiffelTestExecutionRecipeCollectionCreatedEvent": json.dumps(event.json)}
             data["suite_id"] = suite_id
+            data["otel_context"] = self._get_current_context()
             span.set_attribute("suite_id", suite_id)
 
             job = Job(in_cluster=bool(os.getenv("DOCKER_CONTEXT")))
@@ -132,6 +136,7 @@ class SuiteStarter:  # pylint:disable=too-many-instance-attributes
             except AssertionError as exception:
                 LOGGER.critical("Incomplete data for ESR. %r", exception)
                 span.record_exception(exception)
+                span.set_status(opentelemetry.trace.Status(trace.StatusCode.ERROR))
                 raise
 
             body = job.load_yaml(
