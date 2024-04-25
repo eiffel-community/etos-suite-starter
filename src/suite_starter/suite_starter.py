@@ -27,6 +27,8 @@ from opentelemetry.propagate import inject
 from etos_lib import ETOS
 from etos_lib.kubernetes.jobs import Job
 from etos_lib.logging.logger import FORMAT_CONFIG
+from etos_lib.opentelemetry.semconv import Attributes as SemConvAttributes
+
 
 LOGGER = logging.getLogger(__name__)
 # Remove spam from pika.
@@ -91,7 +93,7 @@ class SuiteStarter:  # pylint:disable=too-many-instance-attributes
             "ttl": os.getenv("ETOS_ESR_TTL", "3600"),
             "termination_grace_period": os.getenv("ETOS_TERMINATION_GRACE_PERIOD", "300"),
             "sidecar_image": os.getenv("ETOS_SIDECAR_IMAGE"),
-            "otel_collector_host": os.getenv("OTEL_COLLECTOR_HOST"),
+            "otel_collector_host": os.getenv("OTEL_COLLECTOR_HOST") or "null",
         }
         self.etos.config.set("configuration", configuration)
 
@@ -122,11 +124,11 @@ class SuiteStarter:  # pylint:disable=too-many-instance-attributes
             data = {"EiffelTestExecutionRecipeCollectionCreatedEvent": json.dumps(event.json)}
             data["suite_id"] = suite_id
             data["otel_context"] = self._get_current_context()
-            span.set_attribute("suite_id", suite_id)
+            span.set_attribute(SemConvAttributes.SUITE_ID, suite_id)
 
             job = Job(in_cluster=bool(os.getenv("DOCKER_CONTEXT")))
             job_name = job.uniqueify(f"suite-runner-{suite_id}").lower()
-            span.set_attribute("job_name", job_name)
+            span.set_attribute(SemConvAttributes.SUITE_RUNNER_JOB_ID, job_name)
             data["job_name"] = job_name
 
             LOGGER.info("Dynamic data: %r", data)
