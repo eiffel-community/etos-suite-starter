@@ -106,7 +106,6 @@ class SuiteStarter:  # pylint:disable=too-many-instance-attributes
         # e. g. {'traceparent': '00-0be6c260d9cbe9772298eaf19cb90a5b-371353ee8fbd3ced-01'}
         inject(carrier)
         env = ",".join(f"{k}={v}" for k, v in carrier.items())
-        LOGGER.info("Current OpenTelemetry context env: %s", env)
         return env
 
     def suite_runner_callback(self, event, _):
