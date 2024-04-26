@@ -59,7 +59,7 @@ data:
             - secretRef:
                 name: {etos_rabbitmq_secret}
             - configMapRef:
-                name: etos-observability
+                name: {etos_observability_configmap}
             env:
             - name: TERCC
               value: '{EiffelTestExecutionRecipeCollectionCreatedEvent}'
