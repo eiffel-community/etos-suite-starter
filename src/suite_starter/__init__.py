@@ -16,6 +16,13 @@
 """ETOS suite starter module."""
 import os
 from importlib.metadata import version, PackageNotFoundError
+
+from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.resources import SERVICE_NAME, SERVICE_NAMESPACE, SERVICE_VERSION, Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
 from etos_lib.logging.logger import setup_logging
 
 # The suite starter shall not send logs to RabbitMQ as it
@@ -31,3 +38,18 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 DEV = os.getenv("DEV", "false").lower() == "true"
 ENVIRONMENT = "development" if DEV else "production"
 setup_logging("ETOS Suite Starter", VERSION, ENVIRONMENT)
+
+if os.getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"):
+    PROVIDER = TracerProvider(
+        resource=Resource.create(
+            {
+                SERVICE_NAME: "etos-suite-starter",
+                SERVICE_VERSION: VERSION,
+                SERVICE_NAMESPACE: ENVIRONMENT,
+            }
+        )
+    )
+    EXPORTER = OTLPSpanExporter()
+    PROCESSOR = BatchSpanProcessor(EXPORTER)
+    PROVIDER.add_span_processor(PROCESSOR)
+    trace.set_tracer_provider(PROVIDER)

@@ -21,9 +21,14 @@ import logging
 import os
 from pathlib import Path
 
+from opentelemetry import trace, context
+from opentelemetry.propagate import inject
+
 from etos_lib import ETOS
 from etos_lib.kubernetes.jobs import Job
 from etos_lib.logging.logger import FORMAT_CONFIG
+from etos_lib.opentelemetry.semconv import Attributes as SemConvAttributes
+
 
 LOGGER = logging.getLogger(__name__)
 # Remove spam from pika.
@@ -57,6 +62,7 @@ class SuiteStarter:  # pylint:disable=too-many-instance-attributes
             self.suite_runner_callback,
             can_nack=True,
         )
+        self.tracer = trace.get_tracer(__name__)
 
     def _load_template(self, suite_runner_template_path: str) -> str:
         """Load the suite runner template file."""
@@ -71,6 +77,7 @@ class SuiteStarter:  # pylint:disable=too-many-instance-attributes
             "EiffelTestExecutionRecipeCollectionCreatedEvent": "FakeEvent",
             "suite_id": "FakeID",
             "job_name": "FakeName",
+            "otel_context": "",
         }
         formatted = suite_runner_template.format(**data, **self.etos.config.get("configuration"))
         job = Job(in_cluster=bool(os.getenv("DOCKER_CONTEXT")))
@@ -82,12 +89,25 @@ class SuiteStarter:  # pylint:disable=too-many-instance-attributes
             "docker_image": os.getenv("SUITE_RUNNER"),
             "log_listener": os.getenv("LOG_LISTENER"),
             "etos_configmap": os.getenv("ETOS_CONFIGMAP"),
+            "etos_observability_configmap": os.getenv("ETOS_OBSERVABILITY_CONFIGMAP"),
             "etos_rabbitmq_secret": os.getenv("ETOS_RABBITMQ_SECRET"),
             "ttl": os.getenv("ETOS_ESR_TTL", "3600"),
             "termination_grace_period": os.getenv("ETOS_TERMINATION_GRACE_PERIOD", "300"),
             "sidecar_image": os.getenv("ETOS_SIDECAR_IMAGE"),
+            "otel_collector_host": os.getenv("OTEL_COLLECTOR_HOST") or "null",
         }
         self.etos.config.set("configuration", configuration)
+
+    def _get_current_context(self):
+        """Get current OpenTelemetry context."""
+        ctx = context.get_current()
+        LOGGER.info("Current OpenTelemetry context: %s", ctx)
+        carrier = {}
+        # inject() creates a dict with context reference,
+        # e. g. {'traceparent': '00-0be6c260d9cbe9772298eaf19cb90a5b-371353ee8fbd3ced-01'}
+        inject(carrier)
+        env = ",".join(f"{k}={v}" for k, v in carrier.items())
+        return env
 
     def suite_runner_callback(self, event, _):
         """Start a suite runner on a TERCC event.
@@ -97,31 +117,37 @@ class SuiteStarter:  # pylint:disable=too-many-instance-attributes
         :return: Whether event was ACK:ed or not.
         :rtype: bool
         """
-        suite_id = event.meta.event_id
-        FORMAT_CONFIG.identifier = suite_id
-        LOGGER.info("Received a TERCC event. Build data for ESR.")
-        data = {"EiffelTestExecutionRecipeCollectionCreatedEvent": json.dumps(event.json)}
-        data["suite_id"] = suite_id
+        with self.tracer.start_as_current_span("suite", context=context.get_current()) as span:
+            suite_id = event.meta.event_id
+            FORMAT_CONFIG.identifier = suite_id
+            LOGGER.info("Received a TERCC event. Build data for ESR.")
+            data = {"EiffelTestExecutionRecipeCollectionCreatedEvent": json.dumps(event.json)}
+            data["suite_id"] = suite_id
+            data["otel_context"] = self._get_current_context()
+            span.set_attribute(SemConvAttributes.SUITE_ID, suite_id)
 
-        job = Job(in_cluster=bool(os.getenv("DOCKER_CONTEXT")))
-        job_name = job.uniqueify(f"suite-runner-{suite_id}").lower()
-        data["job_name"] = job_name
+            job = Job(in_cluster=bool(os.getenv("DOCKER_CONTEXT")))
+            job_name = job.uniqueify(f"suite-runner-{suite_id}").lower()
+            span.set_attribute(SemConvAttributes.SUITE_RUNNER_JOB_ID, job_name)
+            data["job_name"] = job_name
 
-        LOGGER.info("Dynamic data: %r", data)
-        LOGGER.info("Static data: %r", self.etos.config.get("configuration"))
-        try:
-            assert data["EiffelTestExecutionRecipeCollectionCreatedEvent"]
-        except AssertionError as exception:
-            LOGGER.critical("Incomplete data for ESR. %r", exception)
-            raise
+            LOGGER.info("Dynamic data: %r", data)
+            LOGGER.info("Static data: %r", self.etos.config.get("configuration"))
+            try:
+                assert data["EiffelTestExecutionRecipeCollectionCreatedEvent"]
+            except AssertionError as exception:
+                LOGGER.critical("Incomplete data for ESR. %r", exception)
+                span.record_exception(exception)
+                span.set_status(trace.Status(trace.StatusCode.ERROR))
+                raise
 
-        body = job.load_yaml(
-            self.suite_runner_template.format(**data, **self.etos.config.get("configuration"))
-        )
-        LOGGER.info("Starting new executor: %r", job_name)
-        job.create_job(body)
-        LOGGER.info("ESR successfully launched.")
-        return True
+            body = job.load_yaml(
+                self.suite_runner_template.format(**data, **self.etos.config.get("configuration"))
+            )
+            LOGGER.info("Starting new executor: %r", job_name)
+            job.create_job(body)
+            LOGGER.info("ESR successfully launched.")
+            return True
 
     def run(self):
         """Run the SuiteStarter main loop.
