@@ -109,6 +109,22 @@ class SuiteStarter:  # pylint:disable=too-many-instance-attributes
         env = ",".join(f"{k}={v}" for k, v in carrier.items())
         return env
 
+    @classmethod
+    def remove_empty_configmaps(cls, data):
+        """Iterate the ESR configuration dict recursively and remove empty configmaps."""
+        element_to_remove = {"configMapRef": {"name": "None"}}
+        if isinstance(data, dict):
+            for key, value in list(data.items()):
+                if value == element_to_remove:
+                    del data[key]
+                else:
+                    cls.remove_empty_configmaps(value)
+        elif isinstance(data, list):
+            while element_to_remove in data:
+                data.remove(element_to_remove)
+            for item in data:
+                cls.remove_empty_configmaps(item)
+
     def suite_runner_callback(self, event, _):
         """Start a suite runner on a TERCC event.
 
@@ -144,6 +160,9 @@ class SuiteStarter:  # pylint:disable=too-many-instance-attributes
             body = job.load_yaml(
                 self.suite_runner_template.format(**data, **self.etos.config.get("configuration"))
             )
+            # Handle cases when some configmaps aren't set (e. g. etos_observability_configmap):
+            self.remove_empty_configmaps(body)
+
             LOGGER.info("Starting new executor: %r", job_name)
             job.create_job(body)
             LOGGER.info("ESR successfully launched.")
