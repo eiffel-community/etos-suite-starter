@@ -160,7 +160,7 @@ class SuiteStarter:  # pylint:disable=too-many-instance-attributes
             body = job.load_yaml(
                 self.suite_runner_template.format(**data, **self.etos.config.get("configuration"))
             )
-            # needed to handle cases when some configmaps aren't set, such as etos_observability_configmap:
+            # Handle cases when some configmaps aren't set (e. g. etos_observability_configmap):
             self.remove_empty_configmaps(body)
 
             LOGGER.info("Starting new executor: %r", job_name)
