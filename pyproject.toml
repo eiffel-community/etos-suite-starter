@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=72", "wheel", "setuptools_scm[toml]>=8"]
+
+[project]
+name = "etos_suite_starter"
+dynamic = ["version"]
+description = "ETOS Suite Starter"
+authors = [{name = "Tobias Persson", email = "tobias.persson@axis.com"}]
+license = { text  = "Apache License, Version 2.0" }
+readme = "README.rst"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License"
+]
+
+dependencies = [
+    "etos_lib==4.3.1",
+    "opentelemetry-api~=1.21",
+    "opentelemetry-exporter-otlp~=1.21",
+    "opentelemetry-sdk~=1.21"
+]
+
+[options]
+zip_safe = false
+include_package_data = true
+python_requires = ">=3.4"
+
+[options.packages.find]
+where = "src"
+exclude = ["tests"]
+
+[project.urls]
+Documentation = "https://etos.readthedocs.io/"
+Homepage = "https://github.com/eiffel-community/etos-suite-starter"
+Repository = "https://github.com/eiffel-community/etos-suite-starter"
+
+[project.scripts]
+
+[project.optional-dependencies]
+testing = ["pytest", "pytest-cov"]
+
+[test]
+extras = true
+
+[tool.build_sphinx]
+source_dir = "docs"
+build_dir = "build/sphinx"
+
+[tool.devpi.upload]
+no-vcs = 1
+formats = "bdist_wheel"
+
+[tool.flake8]
+exclude = [".tox", "build", "dist", ".eggs", "docs/conf.py"]
+
+[tool.pytest.ini_options]
+addopts = "--cov etos_suite_starter --cov-report term-missing --verbose"
+norecursedirs = ["dist", "build", ".tox"]
+testpaths = ["tests"]
+
+[tool.setuptools_scm]
+version_scheme = "setup:version_scheme"
+local_scheme = "setup:local_scheme"
