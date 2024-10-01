@@ -2,7 +2,7 @@ FROM python:3.9-bookworm AS build
 
 COPY . /src
 WORKDIR /src
-RUN python3 setup.py bdist_wheel
+RUN pip install --no-cache-dir build==1.2.2 && python3 -m build
 
 FROM python:3.9-slim-bookworm
 
