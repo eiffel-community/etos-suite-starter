@@ -58,7 +58,3 @@ exclude = [".tox", "build", "dist", ".eggs", "docs/conf.py"]
 addopts = "--cov etos_suite_starter --cov-report term-missing --verbose"
 norecursedirs = ["dist", "build", ".tox"]
 testpaths = ["tests"]
-
-[tool.setuptools_scm]
-version_scheme = "setup:version_scheme"
-local_scheme = "setup:local_scheme"

@@ -39,4 +39,4 @@ def local_scheme(version) -> str:
 
 
 if __name__ == "__main__":
-    setup()
+    setup(use_scm_version={"local_scheme": local_scheme, "version_scheme": version_scheme})
