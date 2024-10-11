@@ -1,5 +1,6 @@
 [build-system]
 requires = ["setuptools>=72", "wheel", "setuptools_scm[toml]>=8"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "etos_suite_starter"
@@ -14,7 +15,6 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License"
 ]
 requires-python = ">=3.9"
-
 dependencies = [
     "etos_lib==4.3.1",
     "opentelemetry-api~=1.21",
@@ -22,26 +22,13 @@ dependencies = [
     "opentelemetry-sdk~=1.21"
 ]
 
-[options]
-zip_safe = false
-include_package_data = true
-
-[options.packages.find]
-where = "src"
-exclude = ["tests"]
-
 [project.urls]
 Documentation = "https://etos.readthedocs.io/"
 Homepage = "https://github.com/eiffel-community/etos-suite-starter"
 Repository = "https://github.com/eiffel-community/etos-suite-starter"
 
-[project.scripts]
-
 [project.optional-dependencies]
 testing = ["pytest", "pytest-cov"]
-
-[test]
-extras = true
 
 [tool.build_sphinx]
 source_dir = "docs"
@@ -58,3 +45,6 @@ exclude = [".tox", "build", "dist", ".eggs", "docs/conf.py"]
 addopts = "--cov etos_suite_starter --cov-report term-missing --verbose"
 norecursedirs = ["dist", "build", ".tox"]
 testpaths = ["tests"]
+
+[tool.setuptools.packages]
+find = { where = ["src"], exclude = ["tests"] }
