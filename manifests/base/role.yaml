@@ -53,3 +53,30 @@ rules:
   - create
   - patch
   - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: testrun-reader
+  labels:
+    app.kubernetes.io/name: etos-testrun-reader
+    app.kubernetes.io/part-of: etos
+  annotations:
+    rbac.authorization.kubernetes.io/autoupdate: "true"
+rules:
+- apiGroups:
+  - "etos.eiffel-community.github.io"
+  resources:
+  - testruns
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - "etos.eiffel-community.github.io"
+  resources:
+  - testruns/status
+  verbs:
+  - get
+  - list
+  - watch

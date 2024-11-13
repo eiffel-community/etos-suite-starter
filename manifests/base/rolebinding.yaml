@@ -13,3 +13,19 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: etos-suite-starter
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/name: etos-suite-runner
+    app.kubernetes.io/part-of: etos
+    app.kubernetes.io/component: suite-runner
+  name: etos-sa-testrun-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: testrun-reader
+subjects:
+- kind: ServiceAccount
+  name: etos-sa
