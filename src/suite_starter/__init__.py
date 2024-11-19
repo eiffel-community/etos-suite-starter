@@ -15,15 +15,22 @@
 # limitations under the License.
 """ETOS suite starter module."""
 import os
-from importlib.metadata import version, PackageNotFoundError
-
-from opentelemetry import trace
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
-from opentelemetry.sdk.resources import SERVICE_NAME, SERVICE_NAMESPACE, SERVICE_VERSION, Resource
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from importlib.metadata import PackageNotFoundError, version
 
 from etos_lib.logging.logger import setup_logging
+from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.resources import (
+    DEPLOYMENT_ENVIRONMENT,
+    SERVICE_NAME,
+    SERVICE_VERSION,
+    OTELResourceDetector,
+    ProcessResourceDetector,
+    Resource,
+    get_aggregated_resources,
+)
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 # The suite starter shall not send logs to RabbitMQ as it
 # is too early in the ETOS test run.
@@ -37,19 +44,24 @@ except PackageNotFoundError:
 BASE = os.path.dirname(os.path.abspath(__file__))
 DEV = os.getenv("DEV", "false").lower() == "true"
 ENVIRONMENT = "development" if DEV else "production"
-setup_logging("ETOS Suite Starter", VERSION, ENVIRONMENT)
+OTEL_RESOURCE = Resource.create(
+    {
+        SERVICE_NAME: "etos-suite-starter",
+        SERVICE_VERSION: VERSION,
+        DEPLOYMENT_ENVIRONMENT: ENVIRONMENT,
+    }
+)
 
-if os.getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"):
-    PROVIDER = TracerProvider(
-        resource=Resource.create(
-            {
-                SERVICE_NAME: "etos-suite-starter",
-                SERVICE_VERSION: VERSION,
-                SERVICE_NAMESPACE: ENVIRONMENT,
-            }
-        )
-    )
+
+if os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT"):
+    OTEL_RESOURCE = get_aggregated_resources(
+        [OTELResourceDetector(), ProcessResourceDetector()],
+    ).merge(OTEL_RESOURCE)
+    PROVIDER = TracerProvider(resource=OTEL_RESOURCE)
     EXPORTER = OTLPSpanExporter()
     PROCESSOR = BatchSpanProcessor(EXPORTER)
     PROVIDER.add_span_processor(PROCESSOR)
     trace.set_tracer_provider(PROVIDER)
+    setup_logging("ETOS Suite Starter", VERSION, ENVIRONMENT, OTEL_RESOURCE)
+else:
+    setup_logging("ETOS Suite Starter", VERSION, ENVIRONMENT)
