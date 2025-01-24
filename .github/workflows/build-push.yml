@@ -16,13 +16,17 @@ jobs:
     - name: Build app image
       run: docker build . --tag image
 
-    - name: Log into registry
-      run: echo "${{ secrets.REGISTRYPASSWORD }}" | docker login registry.nordix.org -u ${{ secrets.REGISTRYUSERNAME }} --password-stdin
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Push app image
       id: image
       run: |
-        IMAGE_ID=registry.nordix.org/eiffel/etos-suite-starter
+        IMAGE_ID=ghcr.io/eiffel-community/etos-suite-starter
         # Strip git ref prefix from version
         VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
         # Strip "v" prefix from tag name
@@ -40,7 +44,7 @@ jobs:
       with:
         valueFile: 'manifests/base/deployment.yaml'
         propertyPath: 'spec.template.spec.containers[0].image'
-        value: registry.nordix.org/eiffel/etos-suite-starter:${{ steps.image.outputs.version }}
+        value: ghcr.io/eiffel-community/etos-suite-starter:${{ steps.image.outputs.version }}
         branch: main
         commitChange: true
         message: Updating manifest image to version ${{ steps.image.outputs.version }}
