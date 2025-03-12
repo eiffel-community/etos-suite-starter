@@ -21,7 +21,6 @@ from etos_lib.logging.logger import setup_logging
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.resources import (
-    DEPLOYMENT_ENVIRONMENT,
     SERVICE_NAME,
     SERVICE_VERSION,
     OTELResourceDetector,
@@ -43,12 +42,11 @@ except PackageNotFoundError:
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 DEV = os.getenv("DEV", "false").lower() == "true"
-ENVIRONMENT = "development" if DEV else "production"
+
 OTEL_RESOURCE = Resource.create(
     {
         SERVICE_NAME: "etos-suite-starter",
         SERVICE_VERSION: VERSION,
-        DEPLOYMENT_ENVIRONMENT: ENVIRONMENT,
     }
 )
 
@@ -62,6 +60,6 @@ if os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT"):
     PROCESSOR = BatchSpanProcessor(EXPORTER)
     PROVIDER.add_span_processor(PROCESSOR)
     trace.set_tracer_provider(PROVIDER)
-    setup_logging("ETOS Suite Starter", VERSION, ENVIRONMENT, OTEL_RESOURCE)
+    setup_logging("ETOS Suite Starter", VERSION, OTEL_RESOURCE)
 else:
-    setup_logging("ETOS Suite Starter", VERSION, ENVIRONMENT)
+    setup_logging("ETOS Suite Starter", VERSION)
