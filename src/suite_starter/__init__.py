@@ -60,6 +60,6 @@ if os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT"):
     PROCESSOR = BatchSpanProcessor(EXPORTER)
     PROVIDER.add_span_processor(PROCESSOR)
     trace.set_tracer_provider(PROVIDER)
-    setup_logging("ETOS Suite Starter", VERSION, OTEL_RESOURCE)
+    setup_logging("ETOS Suite Starter", VERSION, otel_resource=OTEL_RESOURCE)
 else:
     setup_logging("ETOS Suite Starter", VERSION)
