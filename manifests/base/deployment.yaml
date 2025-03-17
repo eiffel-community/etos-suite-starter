@@ -18,7 +18,7 @@ spec:
       serviceAccountName: etos-suite-starter
       containers:
         - name: etos-suite-starter
-          image: ghcr.io/eiffel-community/etos-suite-starter:9b270eaa
+          image: ghcr.io/eiffel-community/etos-suite-starter:f1730788
           imagePullPolicy: IfNotPresent
           volumeMounts:
             - name: suite-runner-template
