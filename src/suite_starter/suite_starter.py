@@ -94,7 +94,7 @@ class SuiteStarter:  # pylint:disable=too-many-instance-attributes
             "ttl": os.getenv("ETOS_ESR_TTL", "3600"),
             "termination_grace_period": os.getenv("ETOS_TERMINATION_GRACE_PERIOD", "300"),
             "sidecar_image": os.getenv("ETOS_SIDECAR_IMAGE"),
-            "otel_collector_host": os.getenv("OTEL_COLLECTOR_HOST") or "null",
+            "otel_exporter_otlp_endpoint": os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT") or "null",
         }
         self.etos.config.set("configuration", configuration)
 
