@@ -1,10 +1,10 @@
-FROM python:3.9-bookworm AS build
+FROM python:3.13-trixie AS build
 
 COPY . /src
 WORKDIR /src
-RUN pip install --no-cache-dir build==1.2.2 && python3 -m build
+RUN pip install --no-cache-dir build==1.3.0 && python3 -m build
 
-FROM python:3.9-slim-bookworm
+FROM python:3.13-slim-trixie
 
 COPY --from=build /src/dist/*.whl /tmp
 # hadolint ignore=DL3013
