@@ -9,6 +9,7 @@ on: [push, pull_request]
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   run-tox:
+    name: run-tox
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
@@ -29,6 +30,7 @@ jobs:
         run: tox
 
   run-hadolint:
+    name: run-hadolint
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
@@ -43,6 +45,7 @@ jobs:
           dockerfile: Dockerfile
 
   build-docker-images:
+    name: build-docker-images
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
