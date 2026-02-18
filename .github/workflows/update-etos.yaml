@@ -73,7 +73,7 @@ jobs:
 
         Changes included:
 
-        - ETOS Suite Starter: ${{ inputs.suite-starter-image }}:${{ inputs.suite-starter-version }}\n
+        - ETOS Suite Starter: ${{ inputs.suite-starter-image }}:${{ inputs.suite-starter-version }}"
         sign-commits: true
         branch: "update-etos-suite-starter-${{ github.run_id }}"
         labels: automated-pr, dependencies, etos-suite-starter
