@@ -7,27 +7,27 @@ on:
       - closed
   workflow_dispatch:
 
+env:
+  MAIN_BRANCH: main
 permissions:
   contents: write
   packages: write
 
 jobs:
-  build:
+  build-suite-starter:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true }}
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v6
     - name: Build app image
       run: docker build . --tag image
-
     - name: Login to GitHub Container Registry
       uses: docker/login-action@v3
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Push app image
+    - name: Image ID
       id: image
       run: |
         IMAGE_ID=ghcr.io/eiffel-community/etos-suite-starter
@@ -36,19 +36,22 @@ jobs:
         # Strip "v" prefix from tag name
         [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
         # Use Docker `latest` tag convention
-        [ "$VERSION" == "main" ] && VERSION=$(echo ${{ github.sha }} | cut -c1-8)
-        echo IMAGE_ID=$IMAGE_ID
+        [ "$VERSION" == "$MAIN_BRANCH" ] && VERSION=$(echo ${{ github.sha }} | cut -c1-8)
         echo VERSION=$VERSION
-        docker tag image $IMAGE_ID:$VERSION
-        docker push $IMAGE_ID:$VERSION
-        echo $IMAGE_ID:$VERSION
-        echo "::set-output name=version::$VERSION"
-    - name: Update manifests
-      uses: fjogeleit/yaml-update-action@main
-      with:
-        valueFile: 'manifests/base/deployment.yaml'
-        propertyPath: 'spec.template.spec.containers[0].image'
-        value: ghcr.io/eiffel-community/etos-suite-starter:${{ steps.image.outputs.version }}
-        branch: main
-        commitChange: true
-        message: Updating manifest image to version ${{ steps.image.outputs.version }}
+        echo "image=$IMAGE_ID" >> $GITHUB_OUTPUT
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+    - name: Push app image
+      run: |
+        docker tag image ${{ steps.image.outputs.image }}:${{ steps.image.outputs.version}}
+        echo "Pushing image ${{ steps.image.outputs.image }}:${{ steps.image.outputs.version }}"
+        docker push ${{ steps.image.outputs.image }}:${{ steps.image.outputs.version }}
+    outputs:
+      suiteStarterImage: ${{ steps.image.outputs.image }}
+      suiteStarterVersion: ${{ steps.image.outputs.version }}
+  run-update-etos-defaults:
+    needs: [build-suite-starter]
+    uses: ./.github/workflows/update-etos.yaml
+    secrets: inherit
+    with:
+      suite-starter-image: ${{ needs.build-suite-starter.outputs.suiteStarterImage }}
+      suite-starter-version: ${{ needs.build-suite-starter.outputs.suiteStarterVersion }}
