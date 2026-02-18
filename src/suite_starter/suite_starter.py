@@ -16,6 +16,7 @@
 # limitations under the License.
 # -*- coding: utf-8 -*-
 """ETOS suite starter module."""
+
 import json
 import logging
 import os
@@ -28,7 +29,6 @@ from etos_lib import ETOS
 from etos_lib.kubernetes.jobs import Job
 from etos_lib.logging.logger import FORMAT_CONFIG
 from etos_lib.opentelemetry.semconv import Attributes as SemConvAttributes
-
 
 LOGGER = logging.getLogger(__name__)
 # Remove spam from pika.
